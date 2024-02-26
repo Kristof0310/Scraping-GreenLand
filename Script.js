@@ -46,7 +46,7 @@ async function scrapeData() {
     // Scrape revelant data fields.
     dataObj["Description"] = await contentFrame.$eval(
       "#Body_MindKeyVacancyDetail > div",
-      (element) => element.textContent.trim()
+      (element) => element.innerHTML.trim()
     );
     dataObj["ApplyUrl"] = await contentFrame.$eval(
       "#Body_MindKeyVacancyDetail > div > div > a",
@@ -76,7 +76,9 @@ async function scrapeData() {
   titles = await page.$$eval(
     "#js-job-list > div.job-list__result > div.row > a > div.col-xs-5",
     (title) => {
-      title = title.map((element) => element.textContent.trim());
+      title = title.map((element) =>
+        element.textContent.trim().replaceAll("&", "&amp;")
+      );
       return title;
     }
   );
@@ -84,7 +86,9 @@ async function scrapeData() {
   locations = await page.$$eval(
     "#js-job-list > div.job-list__result > div.row > a > div.col-xs-4",
     (location) => {
-      location = location.map((element) => element.textContent.trim());
+      location = location.map((element) =>
+        element.textContent.trim().replaceAll("&", "&amp;")
+      );
       return location;
     }
   );
@@ -102,7 +106,7 @@ async function scrapeData() {
   for (url in urls) {
     let currentPageData = await pagePromise(urls[url]);
     descriptions.push(currentPageData["Description"]);
-    applyUrls.push(currentPageData["ApplyUrl"]);
+    applyUrls.push(currentPageData["ApplyUrl"].replaceAll("&", "&amp;"));
   }
 
   // Combine data into an array of objects
@@ -124,7 +128,7 @@ async function scrapeData() {
         <title>${job.title}</title>
         <location>${job.location}</location>
         <deadline>${job.deadline}</deadline>
-        <description>${job.description}</description>
+        <description><![CDATA[${job.description}]]></description>
         <applyUrl>${job.applyUrl}</applyUrl>
       </job>
     `
@@ -141,4 +145,4 @@ async function scrapeData() {
 
 scrapeData();
 // Execute the scraping function every 1 hour
-cron.schedule("0 * * * *", scrapeData);
+cron.schedule("0 0 * * *", scrapeData);
